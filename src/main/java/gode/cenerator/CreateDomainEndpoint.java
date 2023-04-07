@@ -6,7 +6,7 @@ import io.micronaut.http.annotation.Post;
 @Controller("/create")
 public class CreateDomainEndpoint {
 
-  @Post
+  @Post(consumes = "application/json", produces = "application/json")
   public String hello(String createCommand) {
     System.out.println(createCommand);
     return "ok";

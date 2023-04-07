@@ -45,3 +45,5 @@ bazel-testlogs
 gradle
 gradlew
 gradlew.bat
+bin/
+/bin/

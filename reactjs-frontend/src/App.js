@@ -29,10 +29,10 @@ function App(props) {
             let con = testServerConnection()
             con.then(
                 (response) => {
-                    setServerConnection("Connection successful")
+                    setServerConnection("Connection successful" + Date())
                 },
                 (error) => {
-                    setServerConnection("Connection failed")
+                    setServerConnection("Connection failed" + Date())
                 })
         }
     };
@@ -54,7 +54,7 @@ function App(props) {
     }
 
     function createDomain(objectToCreate) {
-        return axios.post(`http://localhost:8080/create`, objectToCreate)
+        return axios.post(`http://localhost:8080/create`, {createCommand: objectToCreate})
     }
 
     const testServerConnection = () => {
