@@ -1,0 +1,33 @@
+
+server:
+  port: 2023
+  tomcat:
+    accesslog:
+      enabled: true
+
+spring:
+  application:
+    name: sample-service
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false
+    generate-ddl: false
+    database: mysql
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  datasource:
+    url: jdbc:mysql://localhost:3308/samples?serverTimezone=UTC&useLegacyDatetimeCode=false
+    username: root
+    password: root
+    hikari:
+      maximum-pool-size: 3
+
+jasypt:
+  encryptor:
+    password: app_key!@#123
+

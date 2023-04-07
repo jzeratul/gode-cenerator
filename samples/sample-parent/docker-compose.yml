@@ -1,0 +1,26 @@
+version: '3.8'
+
+# Define services
+services:
+
+  mysqldatabase:
+    image: mysql/mysql-server:latest
+    container_name: mysql-samples
+    ports:
+      - "3308:3306"
+    restart: always
+    environment:
+      MYSQL_DATABASE: samples
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_TCP_PORT: 3306
+
+#  nginx:
+#    image: nginx:latest
+#    container_name: nginx-samples
+#    volumes:
+#      - ./_other/nginx/nginx-dev.conf:/etc/nginx/nginx.conf
+#      - ./_other/logs:/var/logs/nginx
+#    ports:
+#      - 80:80

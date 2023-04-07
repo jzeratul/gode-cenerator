@@ -1,0 +1,54 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.myproject</groupId>
+        <artifactId>sample-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>sample-api-contracts</artifactId>
+
+    <properties>
+        <contracts.file>${project.basedir}/sample-contracts-v1.yaml</contracts.file>
+        <output.path>${project.build.directory}/generated-sources/contracts</output.path>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>it.traeck.tools.openapi</groupId>
+                <artifactId>openapi-validator-maven-plugin</artifactId>
+                <version>${openapi-validator-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>sample-api-contracts</id>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${contracts.file}</inputSpec>
+                            <outputPath>${output.path}</outputPath>
+                            <outputFilename>sample-contracts-v1</outputFilename>
+                            <outputFormat>YAML</outputFormat>
+                            <prettyPrint>true</prettyPrint>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Packaging all generated HTML/JSON/YAML files into JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <classesDirectory>${output.path}</classesDirectory>
+                    <includes>
+                        <include>*.yaml</include>
+                    </includes>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: sample application
+  description: "the application that unifies "
+  termsOfService: todo
+  contact:
+    email: todo@todo.com
+  license:
+    name: todo
+    url: http://todo.com
+  version: 1.0.1-SNAPSHOT
+tags:
+  - name: sample-service
+
+paths:
+
+  /api/v1/parentsamples:
+    get:
+      operationId: getParentSamples
+      tags:
+        - sample-service
+      responses:
+        '200':
+          description: todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SampleParents'
+
+
+  /api/v1/samples:
+    get:
+      operationId: getSamples
+      tags:
+        - sample-service
+      responses:
+        '200':
+          description: todo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Samples'
+
+components:
+  schemas:
+    SampleParents:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SampleParent'
+    SampleParent:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstname:
+          type: string
+          minLength: 2
+          maxLength: 60
+        lastname:
+          type: string
+          minLength: 2
+          maxLength: 60
+    Samples:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sample'
+    Sample:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstname:
+          type: string
+          minLength: 2
+          maxLength: 60
+        lastname:
+          type: string
+          minLength: 2
+          maxLength: 60
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

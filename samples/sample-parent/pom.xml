@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.0.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <groupId>org.myproject</groupId>
+    <artifactId>sample-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <packaging>pom</packaging>
+
+    <name>sample-parent</name>
+    <description>sample</description>
+
+    <modules>
+        <module>sample-database-adapter</module>
+        <module>sample-api-contracts</module>
+        <module>sample-service</module>
+        <module>sample-rest-api</module>
+        <module>sample-reactjs-frontend</module>
+    </modules>
+
+    <properties>
+        <java.version>19</java.version>
+
+        <!--    Required by the code generator -->
+        <openapi-generator-maven-plugin.version>6.4.0</openapi-generator-maven-plugin.version>
+        <openapi-validator-maven-plugin.version>1.0.2</openapi-validator-maven-plugin.version>
+        <swagger-parser.version>2.1.12</swagger-parser.version>
+        <swagger-annotations.version>2.2.8</swagger-annotations.version>
+        <jackson-databind-nullable-version>0.2.6</jackson-databind-nullable-version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+        <hypersistence-utils-hibernate-60.version>3.2.0</hypersistence-utils-hibernate-60.version>
+        <hibernate-validator.version>8.0.0.Final</hibernate-validator.version>
+        <!--  End  Required by the code generator -->
+
+
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.myproject</groupId>
+                <artifactId>sample-api-contracts</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.myproject</groupId>
+                <artifactId>sample-database-adapter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.myproject</groupId>
+                <artifactId>sample-rest-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

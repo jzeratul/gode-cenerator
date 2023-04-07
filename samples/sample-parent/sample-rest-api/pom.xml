@@ -1,0 +1,168 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.myproject</groupId>
+        <artifactId>sample-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>sample-rest-api</artifactId>
+
+    <properties>
+        <contracts.unpacked.path>${project.build.directory}/unpacked-sources/contracts</contracts.unpacked.path>
+        <contracts.file>${contracts.unpacked.path}/sample-contracts-v1.yaml</contracts.file>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.myproject</groupId>
+            <artifactId>sample-api-contracts</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.myproject</groupId>
+            <artifactId>sample-database-adapter</artifactId>
+        </dependency>
+
+
+        <!--    Required by the code generator -->
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+            <version>${jackson-databind-nullable-version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.parser.v3</groupId>
+            <artifactId>swagger-parser</artifactId>
+            <version>${swagger-parser.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${swagger-annotations.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>${javax.annotation-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+        </dependency>
+        <!--  End  Required by the code generator -->
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>unpack-contracts</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <type>jar</type>
+                            <includeArtifactIds>sample-api-contracts</includeArtifactIds>
+                            <includes>*.yaml</includes>
+                            <outputDirectory>${contracts.unpacked.path}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>it.traeck.tools.openapi</groupId>
+                <artifactId>openapi-validator-maven-plugin</artifactId>
+                <version>${openapi-validator-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${contracts.file}</inputSpec>
+                            <outputPath>${project.build.directory}/classes</outputPath>
+                            <outputFilename>openapi</outputFilename>
+                            <outputFormat>YAML</outputFormat>
+                            <prettyPrint>true</prettyPrint>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>${openapi-generator-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>GENERATE API</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${contracts.file}</inputSpec>
+
+                            <generatorName>spring</generatorName>
+
+                            <modelPackage>org.myproject.rest.model</modelPackage>
+                            <apiPackage>org.myproject.rest.api</apiPackage>
+
+                            <generateModels>true</generateModels>
+                            <generateApis>true</generateApis>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateAliasAsModel>false</generateAliasAsModel>
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateApiTests>false</generateApiTests>
+                            <generateSupportingFiles>false</generateSupportingFiles>
+
+                            <modelNameSuffix>DTO</modelNameSuffix>
+
+                            <configOptions>
+                                <delegatePattern>false</delegatePattern>
+                                <dateLibrary>java8</dateLibrary>
+                                <bigDecimalAsString>true</bigDecimalAsString>
+                                <booleanGetterPrefix>is</booleanGetterPrefix>
+                                <serializableModel>true</serializableModel>
+                                <useOptional>true</useOptional>
+                                <useTags>true</useTags>
+                                <useBeanValidation>true</useBeanValidation>
+
+                                <unhandledException>true</unhandledException>
+
+                                <performBeanValidation>true</performBeanValidation>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <skipDefaultInterface>true</skipDefaultInterface>
+                                <interfaceOnly>true</interfaceOnly>
+                                <swaggerDocketConfig>false</swaggerDocketConfig>
+
+                                <additionalModelTypeAnnotations>;@lombok.Builder;@lombok.extern.jackson.Jacksonized;
+                                </additionalModelTypeAnnotations>
+
+                                <title>pili</title>
+
+                                <licenseName>TODO</licenseName>
+                                <licenseUrl>TODO</licenseUrl>
+
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

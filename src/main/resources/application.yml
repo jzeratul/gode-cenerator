@@ -1,0 +1,21 @@
+micronaut:
+  application:
+    name: godeCenerator
+  router:
+    static-resources:
+      default:
+        enabled: true
+        mapping: /**
+        paths: classpath:public
+  server:
+    cors:
+      enabled: true
+      configurations:
+        ui:
+          allowed-origins:
+            - http://127.0.0.1:3000
+            - http://localhost:3000
+netty:
+  default:
+    allocator:
+      max-order: 3
