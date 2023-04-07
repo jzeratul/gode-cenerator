@@ -130,9 +130,6 @@ function App(props) {
             </div>
             <div className="container m-t-105">
                 <div className="row">
-                    <p>{serverMessage}</p>
-                </div>
-                <div className="row">
                     {items.map(function (item, rowIdx) {
                         return <div key={rowIdx} className="col-2-sm card">
                                 <div className="container">
@@ -146,9 +143,11 @@ function App(props) {
                             </div>
                     })}
                 </div>
-                <div>
-                    <p>{serverConnection}</p>
-                </div>
+            </div>
+
+            <div className="footer">
+                <p>{serverMessage}</p>
+                <p>{serverConnection}</p>
             </div>
         </>;
 }

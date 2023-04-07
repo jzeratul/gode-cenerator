@@ -25,8 +25,8 @@ application {
     mainClass.set("gode.cenerator.Application")
 }
 java {
-    sourceCompatibility = JavaVersion.toVersion("11")
-    targetCompatibility = JavaVersion.toVersion("11")
+    sourceCompatibility = JavaVersion.toVersion("19")
+    targetCompatibility = JavaVersion.toVersion("19")
 }
 
 graalvmNative.toolchainDetection = false

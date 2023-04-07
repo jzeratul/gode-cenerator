@@ -31,3 +31,18 @@
     padding: 0;
     margin: 0;
 }
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(188, 186, 186);
+  }
+
+.footer p {
+    text-align: left;
+    color: green;
+    font-weight: bold;
+    margin: 0px px 5px 5px;
+}
