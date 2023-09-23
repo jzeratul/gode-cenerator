@@ -1,85 +1,56 @@
 import './simple-grid.css';
 import './App.css';
 
-import React, {useState} from "react"
+import React, {useEffect, useState} from "react"
 import {ReactTerminal} from "react-terminal";
-import axios from "axios";
+import axios, {all} from "axios";
 
 let websocket = null
-let i = 0
+let allItems = []
 
-function App(props) {
-    // Define commands here
-    const commands = {
-        whoami: "jzeratul",
+function addItem(objectToCreate) {
 
-        ws: () => {
-            if(websocket === null) {
-                websocket = startWebSockets()
-                i = 10
-            }
-            sendMessage(websocket, "Sending message " + i++ )
-        },
-        create: (objectToCreate) => {
-            createDomain(objectToCreate)
-            addItem(objectToCreate)
-            return 'creating item...'
-        },
-        test: () => {
-            let con = testServerConnection()
-            con.then(
-                (response) => {
-                    setServerConnection("Connection successful" + Date())
-                },
-                (error) => {
-                    setServerConnection("Connection failed" + Date())
-                })
+    let split = objectToCreate.split(" ");
+    let clazz = {
+        name: split[1],
+        attributes: split.slice(2, split.length + 1)
+    }
+    console.log("initial items " + allItems.length)
+    allItems.push(clazz)
+}
+
+const startWebSockets = (setItems, setServerMessage) => {
+    const websocket = new WebSocket('ws://localhost:8080/code-generator/new-generation/vlad');
+
+    websocket.onopen = () => {
+        console.log('connected');
+    }
+
+    websocket.onmessage = (event) => {
+        if(event.data === "ok") {
+            return
         }
-    };
+        addItem(event.data)
+        setServerMessage(event.data + " " + new Date())
+        setItems(allItems)
+    }
 
-    const [items, setItems] = useState([])
-    const [serverConnection, setServerConnection] = useState("")
+    websocket.onclose = () => {
+        console.log("Closing websocket")
+    }
+    return websocket
+}
+
+
+function App() {
+
+    const [items, setItems] = useState(allItems)
     const [serverMessage, setServerMessage] = useState("")
 
-    function addItem(objectToCreate) {
-
-        let split = objectToCreate.split(" ");
-        let clazz = {
-            name: split[0], 
-            attributes: split.slice(1, split.length + 1)
-        }
-        let newItems = [...items]
-        newItems.push(clazz)
-        setItems(newItems)
-    }
-
-    function createDomain(objectToCreate) {
-        return axios.post(`http://localhost:8080/create`, {createCommand: objectToCreate})
-    }
-
-    const testServerConnection = () => {
-        return axios.get(`http://localhost:8080/healthcheck`)
-
-    }
-
-    const startWebSockets = () => {
-        const websocket = new WebSocket('ws://localhost:8080/chat/topic/userX');
-
-        websocket.onopen = () => {
-            console.log('connected');
-        }
-
-        websocket.onmessage = (event) => {
-            // const data = JSON.parse(event.data);
-            // console.log("oh 6 " + data)
-            setServerMessage(event.data)
-        }
-
-        websocket.onclose = () => {
-            console.log("Closing websocket")
-        }
-        return websocket
-    }
+    // useEffect(() => {
+    //     setItems(allItems)
+    //     console.log("in useeffect " + allItems.length)
+    // }, [allItems]);
 
     const waitForOpenConnection = (socket) => {
         return new Promise((resolve, reject) => {
@@ -101,6 +72,28 @@ function App(props) {
         })
     }
 
+    // Define commands here
+    const commands = {
+        whoami: "jzeratul",
+
+        healthcheck: () => {
+            let con = axios.get(`http://localhost:8080/healthcheck`)
+            con.then(
+                (response) => {
+                    setServerMessage("healthcheck ok")
+                },
+                (error) => {
+                    setServerMessage("healthcheck failed")
+                })
+        },
+        create: (objectToCreate) => {
+            if(websocket === null) {
+                websocket = startWebSockets(setItems, setServerMessage)
+            }
+            sendMessage(websocket, "create " + objectToCreate)
+            // return 'creating item...'
+        }
+    };
     const sendMessage = async (socket, msg) => {
         if (socket.readyState !== socket.OPEN) {
             try {
@@ -122,16 +115,16 @@ function App(props) {
                     prompt={' $root>'}
                     themes={{
                         'my-custom-theme': {
-                            themeBGColor: "#272B36", themeColor: "#00FF00", themePromptColor: "#FFFFFF"
+                            themeBGColor: "#000000", themeColor: "#00FF00", themePromptColor: "#FFFFFF"
                         }
                     }}
                     theme="my-custom-theme"y
                 />
             </div>
-            <div className="container m-t-105">
+            <div className="container m-t-100">
                 <div className="row">
                     {items.map(function (item, rowIdx) {
-                        return <div key={rowIdx} className="col-2-sm card">
+                        return <div key={rowIdx} className="col-3-sm card">
                                 <div className="container">
                                     <h4>{item.name}</h4>
                                     {item.attributes.map(function (attr, attrIdx) {
@@ -146,8 +139,7 @@ function App(props) {
             </div>
 
             <div className="footer">
-                <p>{serverMessage}</p>
-                <p>{serverConnection}</p>
+                <p>$>   {serverMessage}</p>
             </div>
         </>;
 }

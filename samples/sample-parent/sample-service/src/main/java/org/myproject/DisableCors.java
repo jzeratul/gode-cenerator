@@ -1,4 +1,4 @@
-package org.myproject;
+package gode.cenerator;
 
 import org.springframework.context.annotation.Configuration;
 
