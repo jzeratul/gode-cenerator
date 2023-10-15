@@ -130,18 +130,22 @@ public class YamlRestContractGenerator {
 
           genericMessage(broadcaster, "Generic " + myYml.header.header.toString());
 
-          if (!foundPaths && !finishedTags) {
+          if (!foundPaths) {
             foundPaths = line.startsWith("paths:");
             if (!foundPaths) {
               myYml.header.tags.append("\n").append(line);
-              if(line.contains("sample")) {
+              if (line.contains("sample")) {
                 // duplicate this line for all models
                 String finalLine = line;
                 modelInput.forEach(
                   m -> {
                     String[] splits = m.split(" ", 2);
                     String modelName = splits[0].toLowerCase();
-                    myYml.header.tags.append("\n").append(finalLine.replaceAll("sample", modelName));
+                    String plural = plural(modelName);
+                    myYml.header.tags.append("\n").append(finalLine
+                      .replaceAll("samples", plural)
+                      .replaceAll("sample", modelName)
+                    );
                   }
                 );
               }
@@ -149,7 +153,6 @@ public class YamlRestContractGenerator {
             }
           }
 
-          finishedTags = true;
           genericMessage(broadcaster, "Generic " + myYml.header.header.toString());
 
           if (!foundComponents) {
@@ -172,8 +175,66 @@ public class YamlRestContractGenerator {
             }
             fillEndpointsWithModels(modelInput, myYml, lastUrlIsSample);
             lastUrlIsSample = false;
+            myYml.components.schemas.append(line).append("\n");
+            continue;
           }
+          myYml.components.schemas.append(line).append("\n");
         }
+
+        String space = "  ";
+        String newLine = "\n";
+        modelInput.forEach(
+          m -> {
+            String[] splits = m.split(" ");
+            System.out.println(splits);
+            String modelName = splits[0];
+            String plural = plural(modelName);
+            StringBuilder sb = new StringBuilder(space).append(plural).append(newLine)
+              .append(space).append(space).append("type: object").append(newLine)
+              .append(space).append(space).append("properties:").append(newLine)
+              .append(space).append(space).append(space).append("items:").append(newLine)
+              .append(space).append(space).append(space).append(space).append("type: array").append(newLine)
+              .append(space).append(space).append(space).append(space).append("items:").append(newLine)
+              .append(space).append(space).append(space).append(space).append(space).append("$ref: '#/components/schemas/" + modelName + "'").append(newLine)
+              .append(space).append(modelName).append(newLine)
+              .append(space).append(space).append("type: object").append(newLine)
+              .append(space).append(space).append("properties:").append(newLine);
+
+            if (splits.length > 1) {
+              for (int i = 1; i < splits.length; i++) {
+                String attribute = splits[i];
+                if (attribute.toLowerCase().contains("datetime")) {
+                  sb.append(space).append(space).append(space).append(attribute).append(newLine)
+                    .append(space).append(space).append(space).append(space).append("type: string").append(newLine)
+                    .append(space).append(space).append(space).append(space).append("format: date-time").append(newLine)
+                  ;
+                } else if (attribute.toLowerCase().contains("date")) {
+                  sb.append(space).append(space).append(space).append(attribute).append(newLine)
+                    .append(space).append(space).append(space).append(space).append("type: string").append(newLine)
+                    .append(space).append(space).append(space).append(space).append("format: date").append(newLine)
+                  ;
+                } else if (attribute.toLowerCase().contains("id")) {
+                  sb.append(space).append(space).append(space).append(attribute).append(newLine)
+                    .append(space).append(space).append(space).append(space).append("type: integer").append(newLine)
+                    .append(space).append(space).append(space).append(space).append("format: int64").append(newLine)
+                  ;
+                } else if (attribute.toLowerCase().contains("number") || attribute.toLowerCase().contains("nr")) {
+                  sb.append(space).append(space).append(space).append(attribute).append(newLine)
+                    .append(space).append(space).append(space).append(space).append("type: integer").append(newLine)
+                    .append(space).append(space).append(space).append(space).append("format: int64").append(newLine)
+                  ;
+                } else {
+                  sb.append(space).append(space).append(space).append(attribute).append(newLine)
+                    .append(space).append(space).append(space).append(space).append("type: string").append(newLine)
+                    .append(space).append(space).append(space).append(space).append("minLength: 2").append(newLine)
+                    .append(space).append(space).append(space).append(space).append("maxLength: 60").append(newLine)
+                  ;
+                }
+              }
+            }
+            myYml.components.schemas.append(sb);
+          }
+        );
 
         genericMessage(broadcaster, "Generic " + myYml.endpoints.endpoints.toString());
 
@@ -183,6 +244,7 @@ public class YamlRestContractGenerator {
         System.out.println(myYml.header.header);
         System.out.println(myYml.header.tags);
         System.out.println(myYml.endpoints.endpoints);
+        System.out.println(myYml.components.schemas);
 
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -190,15 +252,31 @@ public class YamlRestContractGenerator {
     }
   }
 
-  private static void fillEndpointsWithModels(List<String> modelInput, MyYml myYml, boolean lastUrlIsSample) {
-    if(!myYml.endpoints.endpoints.isEmpty() && lastUrlIsSample) {
+  private String plural(String modelName) {
+    if (modelName.charAt(modelName.length() - 1) == 'y') {
+      return modelName.substring(0, modelName.length() - 1) + "ies";
+    }
+    if (modelName.charAt(modelName.length() - 1) == 's') {
+      return modelName + "es";
+    }
+    return modelName + "s";
+  }
+
+  private void fillEndpointsWithModels(List<String> modelInput, MyYml myYml, boolean lastUrlIsSample) {
+    if (!myYml.endpoints.endpoints.isEmpty() && lastUrlIsSample) {
       String sampleModel = myYml.endpoints.endpoints.getLast().toString();
 
       modelInput.forEach(
         m -> {
           String[] splits = m.split(" ", 2);
           String modelName = splits[0];
-          StringBuilder newSb = new StringBuilder(sampleModel.replaceAll("sample", modelName.toLowerCase()).replaceAll("Sample", modelName));
+          String plural = plural(modelName);
+          StringBuilder newSb = new StringBuilder(
+            sampleModel
+              .replaceAll("samples", plural.toLowerCase())
+              .replaceAll("Samples", plural)
+              .replaceAll("sample", modelName.toLowerCase())
+              .replaceAll("Sample", modelName));
           myYml.endpoints.endpoints.add(newSb);
         }
       );
