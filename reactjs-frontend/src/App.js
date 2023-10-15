@@ -7,6 +7,7 @@ import axios, {all} from "axios";
 
 let websocket = null
 let allItems = []
+let genericMessages = []
 
 function addItem(objectToCreate) {
 
@@ -15,11 +16,14 @@ function addItem(objectToCreate) {
         name: split[1],
         attributes: split.slice(2, split.length + 1)
     }
-    console.log("initial items " + allItems.length)
     allItems.push(clazz)
 }
 
-const startWebSockets = (setItems, setServerMessage) => {
+function addGenericMessage(message) {
+    genericMessages.push(message.substring("Generic ".length + 1))
+}
+
+const startWebSockets = (setItems, setServerMessage, setGenericMessages) => {
     const websocket = new WebSocket('ws://localhost:8080/code-generator/new-generation/vlad');
 
     websocket.onopen = () => {
@@ -30,9 +34,15 @@ const startWebSockets = (setItems, setServerMessage) => {
         if(event.data === "ok") {
             return
         }
-        addItem(event.data)
-        setServerMessage(event.data + " " + new Date())
-        setItems(allItems)
+
+        if(event.data.startsWith("Generic ")) {
+            addGenericMessage(event.data)
+            setGenericMessages(genericMessages)
+        } else {
+            addItem(event.data)
+            setServerMessage(event.data + " " + new Date())
+            setItems(allItems)
+        }
     }
 
     websocket.onclose = () => {
@@ -46,7 +56,8 @@ function App() {
 
     const [items, setItems] = useState(allItems)
     const [serverMessage, setServerMessage] = useState("")
-
+    const [genericMessages, setGenericMessages] = useState([])
+    
     // useEffect(() => {
     //     setItems(allItems)
     //     console.log("in useeffect " + allItems.length)
@@ -88,7 +99,7 @@ function App() {
         },
         create: (objectToCreate) => {
             if(websocket === null) {
-                websocket = startWebSockets(setItems, setServerMessage)
+                websocket = startWebSockets(setItems, setServerMessage, setGenericMessages)
             }
             sendMessage(websocket, "create " + objectToCreate)
             // return 'creating item...'
@@ -137,9 +148,20 @@ function App() {
                     })}
                 </div>
             </div>
+            <div className="container m-t-100">
+                <div className="row">
+                <pre>
+                    {genericMessages.map(function (item, rowIdx) {
+                        return <pre key={rowIdx}>
+                                    {item}
+                            </pre>
+                    })}
+                    </pre>
+                </div>
+            </div>
 
             <div className="footer">
-                <p>$>   {serverMessage}</p>
+                <p>$&gt;   {serverMessage}</p>
             </div>
         </>;
 }

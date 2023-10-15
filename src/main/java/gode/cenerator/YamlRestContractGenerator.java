@@ -14,13 +14,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.micronaut.http.MediaType.TEXT_PLAIN_TYPE;
 
 public class YamlRestContractGenerator {
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
 
     List<String> modelInput = new ArrayList<>();
     modelInput.add("User id firstname lastname birthdate address");
@@ -29,17 +30,25 @@ public class YamlRestContractGenerator {
     modelInput.add("Address id street city country postalcode");
 
     YamlRestContractGenerator y = new YamlRestContractGenerator();
-    try (Stream<Path> paths = Files.walk(Paths.get("/Users/KC36IK/ws-me/gode-cenerator/samples"))) {
-      paths.filter(Files::isRegularFile)
-        .filter(y::skip)
-        .filter(y::pickThisExtension)
-        .forEach(yml -> {
-          try {
-            y.parse(yml, null, modelInput);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        });
+    y.generateFromSample("/Users/KC36IK/ws-me/gode-cenerator/samples", modelInput, null);
+  }
+
+  public void generateFromSample(String samplesParentPath, List<String> modelInput, WebSocketBroadcaster broadcaster) {
+    try {
+      try (Stream<Path> paths = Files.walk(Paths.get(samplesParentPath))) {
+        paths.filter(Files::isRegularFile)
+          .filter(this::skip)
+          .filter(this::pickThisExtension)
+          .forEach(yml -> {
+            try {
+              this.parse(yml, broadcaster, modelInput);
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          });
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -66,7 +75,7 @@ public class YamlRestContractGenerator {
   boolean components = false;
   boolean schemas = false;
 
-  private void parse(Path fileOrFolder, WebSocketBroadcaster broadcaster, List<String> modelInput) throws Exception {
+  public void parse(Path fileOrFolder, WebSocketBroadcaster broadcaster, List<String> modelInput) throws Exception {
 
     isconfig = fileOrFolder.getFileName().toString().startsWith("application");
     isdocker = fileOrFolder.getFileName().toString().startsWith("docker-compose");
@@ -100,15 +109,17 @@ public class YamlRestContractGenerator {
         BufferedReader read = new BufferedReader(new InputStreamReader(is));
 
         String line;
-        MyYml myYml = new MyYml();
+        MyYml myYml = new MyYml(new StringBuilder(), new StringBuilder(), new LinkedList<StringBuilder>(), new StringBuilder());
 
         boolean foundOpenapiTag = false;
         boolean foundTags = false;
         boolean foundPaths = false;
         boolean foundComponents = false;
-        boolean foundSchemas = false;
-        boolean finishedTags = false; // to allow this tag elsewhere too
         boolean lastUrlIsSample = false;
+
+        boolean sentHeaders = false;
+        boolean sentTags = false;
+        boolean sentEndpoints = false;
 
         while ((line = read.readLine()) != null) {
 
@@ -123,17 +134,20 @@ public class YamlRestContractGenerator {
             foundTags = line.startsWith("tags:");
             if (!foundTags) {
               // continue to build the header
-              myYml.header.header.append("\n").append(line);
+              myYml.header().append("\n").append(line);
               continue;
             }
           }
 
-          genericMessage(broadcaster, "Generic " + myYml.header.header.toString());
+          if(!sentHeaders) {
+            genericMessage(broadcaster, "Generic " + myYml.header().toString());
+            sentHeaders = true;
+          }
 
           if (!foundPaths) {
             foundPaths = line.startsWith("paths:");
             if (!foundPaths) {
-              myYml.header.tags.append("\n").append(line);
+              myYml.tags().append("\n").append(line);
               if (line.contains("sample")) {
                 // duplicate this line for all models
                 String finalLine = line;
@@ -142,7 +156,7 @@ public class YamlRestContractGenerator {
                     String[] splits = m.split(" ", 2);
                     String modelName = splits[0].toLowerCase();
                     String plural = plural(modelName);
-                    myYml.header.tags.append("\n").append(finalLine
+                    myYml.tags().append("\n").append(finalLine
                       .replaceAll("samples", plural)
                       .replaceAll("sample", modelName)
                     );
@@ -153,7 +167,10 @@ public class YamlRestContractGenerator {
             }
           }
 
-          genericMessage(broadcaster, "Generic " + myYml.header.header.toString());
+          if(!sentTags) {
+            genericMessage(broadcaster, "Generic " + myYml.tags());
+            sentTags = true;
+          }
 
           if (!foundComponents) {
             foundComponents = line.startsWith("components:");
@@ -164,21 +181,26 @@ public class YamlRestContractGenerator {
                 fillEndpointsWithModels(modelInput, myYml, lastUrlIsSample);
 
                 lastUrlIsSample = line.contains("sample");
-                myYml.endpoints.endpoints.add(new StringBuilder("\n").append(line));
+                myYml.endpoints().add(new StringBuilder("\n").append(line));
               } else {
-                if (myYml.endpoints.endpoints.isEmpty()) {
-                  myYml.endpoints.endpoints.add(new StringBuilder());
+                if (myYml.endpoints().isEmpty()) {
+                  myYml.endpoints().add(new StringBuilder());
                 }
-                myYml.endpoints.endpoints.getLast().append("\n").append(line);
+                myYml.endpoints().getLast().append("\n").append(line);
               }
               continue;
             }
             fillEndpointsWithModels(modelInput, myYml, lastUrlIsSample);
             lastUrlIsSample = false;
-            myYml.components.schemas.append(line).append("\n");
+            myYml.schemas().append(line).append("\n");
             continue;
           }
-          myYml.components.schemas.append(line).append("\n");
+          myYml.schemas().append(line).append("\n");
+
+          if(!sentEndpoints) {
+            genericMessage(broadcaster, "Generic " + String.join("", myYml.endpoints()));
+            sentEndpoints = true;
+          }
         }
 
         String space = "  ";
@@ -232,19 +254,19 @@ public class YamlRestContractGenerator {
                 }
               }
             }
-            myYml.components.schemas.append(sb);
+            myYml.schemas().append(sb);
           }
         );
 
-        genericMessage(broadcaster, "Generic " + myYml.endpoints.endpoints.toString());
+        genericMessage(broadcaster, "Generic " + myYml.schemas());
 
         // let's print what we did
 
         System.out.println("\n =======================================================");
-        System.out.println(myYml.header.header);
-        System.out.println(myYml.header.tags);
-        System.out.println(myYml.endpoints.endpoints);
-        System.out.println(myYml.components.schemas);
+        System.out.println(myYml.header());
+        System.out.println(myYml.tags());
+        System.out.println(myYml.endpoints());
+        System.out.println(myYml.schemas());
 
       } catch (IOException e) {
         throw new RuntimeException(e);
@@ -263,8 +285,8 @@ public class YamlRestContractGenerator {
   }
 
   private void fillEndpointsWithModels(List<String> modelInput, MyYml myYml, boolean lastUrlIsSample) {
-    if (!myYml.endpoints.endpoints.isEmpty() && lastUrlIsSample) {
-      String sampleModel = myYml.endpoints.endpoints.getLast().toString();
+    if (!myYml.endpoints().isEmpty() && lastUrlIsSample) {
+      String sampleModel = myYml.endpoints().getLast().toString();
 
       modelInput.forEach(
         m -> {
@@ -277,7 +299,7 @@ public class YamlRestContractGenerator {
               .replaceAll("Samples", plural)
               .replaceAll("sample", modelName.toLowerCase())
               .replaceAll("Sample", modelName));
-          myYml.endpoints.endpoints.add(newSb);
+          myYml.endpoints().add(newSb);
         }
       );
     }
@@ -290,26 +312,6 @@ public class YamlRestContractGenerator {
   }
 }
 
-class Header {
-  StringBuilder header = new StringBuilder();
-  StringBuilder tags = new StringBuilder();
-}
 
-class Endpoints {
-  LinkedList<StringBuilder> endpoints = new LinkedList<>();
-
-}
-
-class Components {
-  StringBuilder schemas = new StringBuilder();
-}
-
-class Schemas {
-  LinkedList<StringBuilder> objects = new LinkedList<>();
-}
-
-class MyYml {
-  Header header = new Header();
-  Endpoints endpoints = new Endpoints();
-  Components components = new Components();
+record MyYml(StringBuilder header, StringBuilder tags, LinkedList<StringBuilder> endpoints, StringBuilder schemas) {
 }
